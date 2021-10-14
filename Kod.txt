@@ -1,0 +1,923 @@
+;podzielniki czestotliwosci
+TC equ 34546; 1.19MHz/33Hz
+TD equ 30811; 1.19MHz/37Hz
+TE equ 27805; 1.19MHz/41Hz
+TF equ 25909; 1.19MHz/44Hz
+TG equ 23265; 1.19MHz/49Hz
+TA equ 20727; 1.19MHz/55Hz
+TH equ 18387; 1.19MHz/62Hz
+TP equ 1;pauza
+;Q koniec melodii
+
+kod segment
+assume cs:kod,ss:stosik,ds:dane;
+
+; ******************************************************
+; * PROCEDURY *
+; ******************************************************
+;najpierw proste graficzne
+
+initgraph proc
+    mov al,013H
+    mov ah,00h
+    int 10h
+    ret
+endp
+
+closegraph proc
+    mov al,03H
+    mov ah,00h
+    int 10h
+    ret
+endp
+
+Putpixel proc
+    mov ah,0Ch
+    mov al,kolor
+    mov bx,0;
+    mov cx,x
+    mov dx,y
+    int 10h
+    ret
+endp
+
+;teraz zaczynamy tworzy? figury
+;$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+
+linia proc
+    mov x,0
+    l1: call putpixel
+    inc x;
+    cmp x,187;
+    jne l1; 
+    ret
+endp
+
+column proc
+    mov y,0
+    et: call putpixel
+    inc y;
+    cmp y,107;
+    jne et; 
+    ret
+endp
+
+kolo proc
+push ax
+    mov y,0
+    pocz_wiersza:
+        mov x,0
+        nastepny_pixel:
+        mov ax,y
+        sub ax,ys
+        mul ax      ;acc=(y-ys)^2
+        mov pom, ax
+        mov ax,x
+        sub ax,xs
+        mul ax     
+        add ax,pom  ;ax=(x-xs)^2+(y-ys)^2
+        cmp ax,rkw
+        ja nie_rysuj
+        call putpixel
+        nie_rysuj:
+        inc x
+        cmp x,160
+        jne nastepny_pixel
+        inc y
+        cmp y,100
+        jbe pocz_wiersza
+    pop ax
+    ret
+endp
+
+elipsa proc                                 ;rysuje tylko pionowe i poziome elipsy, ale za to szybciej
+push ax
+    mov y,0
+    poczwiersza:
+        mov x,0
+        nastepnypixel:
+        mov ax,y
+        sub ax,ys
+        mul ax      ;acc=(y-ys)^2*a
+        mul aelipsy
+        mov pom, ax
+        mov ax,x
+        sub ax,xs
+        mul ax     
+        mul belipsy
+        add ax,pom  ;ax=(x-xs)^2*b+(y-ys)^2*a  //troch? sobie zmieni?em r?wnanie elipsy
+        cmp ax,rkw
+        ja nierysuj
+        call putpixel
+        nierysuj:
+        inc x
+        cmp x,160
+        jne nastepnypixel
+        inc y
+        cmp y,100
+        jbe poczwiersza
+    pop ax
+    ret
+endp
+
+;pierwiastek proc       ;mocno przyblizony pierwiastek, w obecnym stanie nie potrzebne
+;    push ax
+;    mov ax,0
+;    mov pom3,0
+;      dalej:
+;      inc ax
+;      mov pom3,ax
+;      mul ax
+;      cmp ax,pier
+;      mov ax,pom3
+;      jbe dalej
+;   mov pier,ax
+;   pop ax
+;   ret
+;endp
+
+;elipsa proc            ;//rysuje elipsy przechylone, dowolne
+;    push ax
+;    mov y,0
+;    poczwiersza:
+;       mov x,0
+;       nastepnypixel:
+;       mov ax,y
+ ;      sub ax,ys
+ ;      mul ax      ;
+ ;      mov pom, ax
+ ;      mov ax,x
+ ;      sub ax,xs
+ ;      mul ax     
+ ;      add ax,pom  ;
+ ;      mov pier,ax
+ ;      call pierwiastek
+ ;      mov ax,pier
+ ;      mov pom2,ax
+ ;      
+ ;      mov ax,y
+ ;      sub ax,yse
+ ;      mul ax      ;
+ ;      mov pom, ax
+ ;      mov ax,x
+ ;      sub ax,xse
+ ;      mul ax     
+ ;      add ax,pom  
+ ;      mov pier,ax
+ ;      call pierwiastek
+ ;      mov ax,pier
+ ;      add ax,pom2
+ ;      
+ ;      cmp ax,reli
+ ;      ja nierysuj
+ ;      call putpixel
+ ;      nierysuj:
+ ;      inc x
+ ;      cmp x,160
+ ;      jne nastepnypixel
+ ;      inc y
+ ;      cmp y,100
+ ;      jbe poczwiersza
+ ;  pop ax
+ ;  ret
+; endp
+
+;$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+;teraz zaczynamy rysowa? flagi do ka?dych piosenek
+;nr flaga$ czy nazwie funkcji oznacza nr piosenki
+;$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+
+flaga proc          ;ba?wany
+    mov kolor,54
+    mov y,0
+    inyk: 
+            call linia
+            inc y
+            cmp y,105
+            jbe inyk
+    mov kolor,31
+    mov belipsy,3
+    mov aelipsy,4
+    mov rkw,2000
+    mov xs,50
+    mov ys,80
+    call elipsa
+    mov rkw,1400
+    mov ys,50
+    call elipsa
+    mov rkw,270
+    mov ys,23
+    call kolo
+    
+    mov kolor,16
+    mov rkw,13
+    mov ys,42
+    call kolo
+    mov ys,87
+    call kolo
+    mov ys,57
+    call kolo
+    mov ys,72
+    call kolo
+    mov ys,16
+    mov xs,45
+    call kolo
+    mov xs,55
+    call kolo
+    
+    mov xs,50
+    mov ys,30
+    mov belipsy,1
+    mov aelipsy,3
+    mov rkw,70
+    mov kolor,41
+    call elipsa
+            
+  
+    mov kolor,31
+    mov belipsy,2
+    mov aelipsy,3
+    mov rkw,1600
+    mov xs, 120
+    mov ys,75
+    call elipsa
+    mov rkw,1000
+    mov ys,45
+    call elipsa
+    mov ys,20
+    mov rkw,300
+    call kolo
+    
+    mov kolor,16
+    mov rkw,13
+    mov ys,42
+    call kolo
+    mov ys,87
+    call kolo
+    mov ys,57
+    call kolo
+    mov ys,72
+    call kolo
+    sub xs,5
+    mov ys,14
+    call kolo
+    add xs,10
+    call kolo
+    
+    mov xs,120
+    mov ys,25
+    mov belipsy,4
+    mov aelipsy,1
+    mov rkw,50
+    mov kolor,42
+    call elipsa
+            
+ret
+endp
+
+flaga2 proc             ;przeplecione pasy, mega wa?na kolejno?c rysowania pas?w
+ mov kolor,10
+    mov y,0
+    jolka: 
+        call linia
+        inc y
+        cmp y,106
+        jbe jolka
+    mov kolor,32
+    mov y,46
+    mar:
+    call linia
+        inc y
+        cmp y,61
+        jbe mar 
+    mov kolor,40
+    mov i,1
+    mov x,26
+    ann:
+        call column
+        inc x
+        inc i
+        cmp i,25
+        jbe ann
+        add x,85
+        mov i,0
+        cmp x,180
+        jbe ann
+    
+    mov kolor,32
+    mov i,1
+    mov y,11
+    anna:
+    call linia
+        inc y
+        inc i
+        cmp i,15
+        jbe anna
+        add y,55
+        mov i,0
+        cmp y,100
+        jbe anna
+    
+            
+    mov kolor,40
+    mov x,81
+    mary:
+        call column
+        inc x
+        cmp x,106
+        jbe mary       
+ret
+endp
+
+
+flaga4 proc             ;s?o?ce za chmur?
+    mov kolor,53
+    mov y,0
+    indyk: 
+            call linia
+            inc y
+            cmp y,105
+            jbe indyk
+    mov kolor,44
+    mov xs,50
+    mov ys,40
+    mov rkw,1200
+    call kolo
+    
+    
+    mov kolor,31
+    mov xs,80
+    mov ys,65
+    mov aelipsy,4
+    mov belipsy,2
+    mov rkw,3600
+     call elipsa
+    ret         
+endp
+
+
+flaga3 proc                 ;t?cza
+    mov kolor,32
+    mov x,0
+    mov i,0
+    zosia:
+        call column
+        inc x
+        inc i
+        cmp i,6
+        jbe zosia
+        inc kolor
+        mov i,0
+        cmp x,160
+        jbe zosia
+ret        
+endp
+
+
+
+flaga5 proc                 ;kratka
+    mov kolor,3
+    mov x,3
+
+        kratkapoziom: 
+            call linia
+            inc y
+            cmp y,105
+            jbe kratkapoziom
+    mov x,0
+    mov y,0
+    mov kolor,1
+        kratka: 
+            call linia
+            inc y
+            call linia            
+            add y,4
+            cmp y,107
+            jbe kratka
+        mov x,0
+        kratkapion:
+            call column
+            inc x
+            call column
+            add x,4
+            cmp x,187
+            jbe kratkapion
+
+ret 
+endp
+
+flaga6 proc                     ;ZAPAS paski 3 kolory
+    mov kolor,44
+    mov y,0
+    joleka: 
+        call linia
+        inc y
+        cmp y,106
+        jbe joleka
+    
+    mov kolor,40
+    mov i,1
+    mov x,32
+    annu:
+        call column
+        inc x
+        inc i
+        cmp i,9
+        jbe annu
+        add x,105
+        mov i,0
+        cmp x,175
+        jbe annu
+
+    mov i,1
+    mov y,16
+    an:
+    call linia
+        inc y
+        inc i
+        cmp i,8
+        jbe an
+        add y,59
+        mov i,0
+        cmp y,100
+        jbe an
+            
+        
+    
+    mov kolor,1
+    mov y,40
+    muar:
+    call linia
+        inc y
+        cmp y,67
+        jbe muar         
+    mov x,77
+    ka:
+        call column
+        inc x
+        cmp x,110
+        jbe ka       
+
+ret
+endp
+
+flaga7 proc                     ;ZAPAS  flaga krzyzykowa
+    mov kolor,50
+    mov y,0
+    japko: 
+            call linia
+            inc y
+            cmp y,105
+            jbe japko
+    mov kolor,1
+    mov y,12
+    mov i,0
+        kokos:
+            call linia
+            inc y
+            inc i
+            cmp i,11
+            jbe kokos   
+            add y,11
+            mov i,0
+            cmp y,95
+            jbe kokos
+    mov kolor,40
+    mov y,16
+    mov i,0
+        ryba:
+            call linia
+            inc y
+            inc i
+            cmp i,3
+            jbe ryba   
+            add y,19
+            mov i,0
+            cmp y,91
+            jbe ryba
+ret
+endp
+
+czarne proc
+
+mov kolor,16
+    mov y,0
+    ink: 
+            call linia
+            inc y
+            cmp y,125
+            jbe ink
+
+endp
+
+;&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+;teraz zaczynamy muzyk?
+;&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+;nuty wg dlugosci
+
+nuta proc
+    push dx;
+    push cx;
+    mov cx,7;
+    mov dx,65535;
+    mov ah,86h;
+    int 15h
+    pop cx
+    pop dx
+    ret
+nuta endp;
+
+polnuta proc
+    push dx;
+    push cx;
+    mov cx,3;
+    mov dx,65535;
+    mov ah,86h;
+    int 15h
+    pop cx
+    pop dx
+    ret
+polnuta endp;
+
+cwiercnuta proc
+    push dx;
+    push cx;
+    mov cx,1; 
+    mov dx,65535; 
+    mov ah,86h;
+    int 15h
+    pop cx
+    pop dx
+    ret
+cwiercnuta endp;
+
+osemka proc
+    push dx;
+    push cx;
+    mov cx,0; 
+    mov dx,32000; 
+    mov ah,86h; 
+    int 15h
+    pop cx
+    pop dx
+    ret
+osemka endp;
+
+;------------------tutaj zaczynamy granie
+sound proc
+    mov ax,ton
+    mov dx,42h
+    out dx,al
+    mov al,ah
+    out dx,al
+
+;zalaczenie glosnika
+    mov dx,61h
+    in al,dx;
+    or al,00000011B;
+    out dx,al;
+    ret
+endp
+
+nosound proc
+    mov dx,61h
+    in al,dx;
+    and al,11111100B;
+    out dx,al;
+    ret
+endp;
+
+play proc
+    call sound
+    cmp czas,1
+    je cala
+    cmp czas,2
+    je pol
+    cmp czas,4
+    je cwierc
+    cmp czas,8
+    je acht
+    jmp endplay
+
+    cala: call nuta
+    jmp endplay
+    pol: call polnuta
+    jmp endplay
+    cwierc: call cwiercnuta
+    jmp endplay
+    acht: call osemka
+    jmp endplay
+    endplay:
+    call nosound
+    ret
+endp
+
+exit proc
+    jmp starczy_juz
+    ret
+endp
+
+;-------------------------
+;tutaj to ju? tylko piosenka po piosence itd
+piosenka1 proc
+    push ax
+    lea ax, nuty1
+    mov es:[100],ax
+    lea ax, oktawy1
+    mov es:[104],ax
+    lea ax,czasy1
+    mov es:[102],ax
+    lea ax,tytul1
+    mov es:[108],ax
+    pop ax
+    ret
+endp
+
+piosenka2 proc
+    push ax
+    lea ax, nuty2
+    mov es:[100],ax
+    lea ax, oktawy2
+    mov es:[104],ax
+    lea ax,czasy2
+    mov es:[102],ax
+    lea ax,tytul2
+    mov es:[108],ax
+    pop ax
+    ret
+endp
+
+piosenka3 proc
+    push ax
+    lea ax, nuty3
+    mov es:[100],ax
+    lea ax, oktawy3
+    mov es:[104],ax
+    lea ax,czasy3
+    mov es:[102],ax
+    lea ax,tytul3
+    mov es:[108],ax
+    pop ax
+    ret
+endp
+
+piosenka4 proc
+    push ax
+    lea ax, nuty4
+    mov es:[100],ax
+    lea ax, oktawy4
+    mov es:[104],ax
+    lea ax,czasy4
+    mov es:[102],ax
+    lea ax,tytul4
+    mov es:[108],ax
+    pop ax
+    ret
+endp
+
+piosenka5 proc
+    push ax
+    lea ax, nuty5
+    mov es:[100],ax
+    lea ax, oktawy5
+    mov es:[104],ax
+    lea ax,czasy5
+    mov es:[102],ax
+    lea ax,tytul5
+    mov es:[108],ax
+    pop ax
+    ret
+endp
+
+;-------------------------------------------------------------------- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!TU ZACZYNAMY AKCJE
+start: 
+mov ax,dane 
+mov ds,ax 
+mov ax,stosik 
+mov ss,ax 
+mov sp,offset szczyt
+
+mov si,0;
+
+mov ah, 9h
+mov dx, offset co_grac
+int 21h
+mov ah, 00h
+int 16h
+mov ah,0
+mov ds:[500],ax
+
+  
+
+    call initgraph;
+
+
+cmp ds:[500],'1'          ;to jest case of wybieramy piosenke
+jne n1
+    call flaga;
+    call piosenka1
+    jmp melodia
+n1:
+cmp ds:[500],'2'
+jne n2
+    call flaga2
+    call piosenka2
+    jmp melodia
+n2:
+cmp ds:[500],'3'
+jne n3
+    call flaga3
+    call piosenka3
+    jmp melodia
+n3:
+cmp ds:[500],'4'
+jne n4
+    call flaga4
+    call piosenka4
+    jmp melodia
+n4:
+    call flaga5
+    call piosenka5
+
+    melodia: mov bx,es:[100]        ;r100 - adres do nut
+;lea bx, nuty3
+    mov dl,ds:[bx+si]
+    cmp dl,'Q'
+je ex   ;omin omijanie wychodzenia
+
+jmp nex ; omin wychodzenie z programu
+ex:
+call exit
+nex:
+
+
+cmp dl,'C'
+je do
+cmp dl,'D'
+je re
+cmp dl,'E'
+je mi
+cmp dl,'F'
+je fa
+cmp dl,'G'
+je so
+cmp dl,'A'
+je la
+cmp dl,'H'
+je Zi
+mov ton,1
+
+;wprowadzenie oktawy
+graj:
+;lea bx,oktawy3
+    mov bx,es:[104]     
+    mov cl,ds:[bx+si]
+    sub cl,30h
+
+    shr ton,cl;
+
+    ;lea bx,czasy3
+    mov bx,es:[102]     
+    mov cl,ds:[bx+si] 
+    sub cl,30h
+    mov czas,cl
+
+    call play;
+    inc si;
+jmp melodia;
+
+
+    do: mov ton,TC
+    jmp graj
+    re: mov ton,TD
+    jmp graj
+    mi: mov ton,TE
+    jmp graj
+    fa: mov ton,TF
+    jmp graj
+    so: mov ton,TG
+    jmp graj
+    la: mov ton,TA
+    jmp graj
+    zi: mov ton,TH
+    jmp graj
+
+    ; no i ju? zagrane
+starczy_juz:
+
+
+;teraz zapiszemy tytul do pliku ale to nie dziala nie wiem czemu
+;lea ax, najlepszy
+;mov dx, ax
+;mov ah, 3ch 
+;xor cx, cx
+;int 21h
+;jc starczy_juz
+
+;mov bx,ax
+;mov ah, 40h
+;mov cx,30
+;mov dx, es:[108]
+;int 21h
+;jc starczy_juz
+
+;mov ah, 3eh
+;int 21
+
+call czarne
+
+mov ah, 9h
+mov dx, offset sluchales
+int 21h
+mov dx, es:[108]
+int 21h
+mov ah, 00h
+int 16h
+
+call closegraph;
+mov ah,4ch
+mov al,00h
+int 21h;
+
+
+
+kod ends;
+
+
+dane segment
+
+    ;;Mario
+    nuty1 db 'EPEPEPCEPGPGPCPGPEPAPHPAPGPEPGAPFGPEPCDGQ'
+    oktawy1 db '30303033030203020202020202430330330303320'
+    czasy1 db '48282442814122424222444244444444444244220' 
+    tytul1  db 'Mario'  ,0Ah,0Dh,'$'
+
+    ;Piraci z Karaibow
+    nuty2 db 'ACADADDEDFDF1FGCECEDCCDACADADDEDFDFFGCECEDCCDQ'
+    oktawy2 db '232323333333333333333333434344444444444444444'
+    czasy2 db '2244442244448224444222222444422444422444422222'
+    tytul2 db 'Piraci z Karaibow',0Ah,0Dh,'$'
+    
+    ;Kaczuchy
+    nuty3 db 'G1GA1AE1EG1G1GA1AE1EG1GACFHAGF1G1GA1AE1EG1G1GA1AE1EG1GACFHAGFQ'
+    oktawy3 db '3333333333333333333333334433333333333333333333333333333443333'
+    czasy3 db '4844844842848448448428222222228484484484284844844842822222222'
+    tytul3 db 'Kaczuchy',0Ah,0Dh,'$'
+    
+    ;Gwiezdne wojny
+    nuty4 db 'CGFEDCGFEDCGFEFDQ'
+    oktawy4 db '33333433334333333'
+    czasy4 db '11444114441144444'
+    tytul4 db 'Gwiezdne wojny',0Ah,0Dh,'$'
+    
+    ;Vivaldi Cztery pory roku - wiosna"
+
+    nuty5 db 'CGFEFGAGCGFEFGAGCAGFEDCDC1CQ'
+    oktawy5 db '444444444444444444444444444444'
+    czasy5 db '112212111122121111121222281'
+    tytul5 db 'Cztery pory roku Vivaldiego',0Ah,0Dh,'$'
+    
+    ;nuty db *'
+   ; oktawy db *'
+   ;czasy db *'
+    
+ton dw 0
+czas db 0
+
+x dw 0                  ;aktualny pixel
+y dw 0
+i dw 0
+kolor db 0
+
+pom dw 0
+pom2 dw 0
+pom3 dw 0
+;pier dw 0           ;do pierwiastka 
+  
+rkw dw 0            ;do rownania okregu i elipsy prostej
+xs dw 0
+ys dw 0
+
+aelipsy dw 0        ;jak elipsa jest sp?aszczona
+belipsy dw 0
+
+;xse dw 0       ;potrzebne do elipsy dowolnej
+;yse dw 0
+;reli dw 0
+
+
+sluchales DB 'Sluchali Panstwo utworu: ',0Ah,0Dh,'$'
+co_grac DB 'Prosze podac numer piosenki: ',0Ah,0Dh,'$'
+najlepszy DB 'C:\Program Files (x86)\GUI Turbo Assembler\Tytul piosenki.txt '
+
+dane ends
+
+
+stosik segment 
+dw 100h dup(0) 
+szczyt label word 
+stosik ends 
+end start 
+
+
